@@ -335,7 +335,7 @@ public class ChatRoom extends JPanel implements ActionListener {
 	 * 保存聊天记录
 	 */
 	private void saveChatRecord() {
-
+	    reciveInfo.append("==========保存于"+WhisperUtil.getTimer()+"聊天内容========="+"\n");
 		String record = reciveInfo.getText();//获取聊天内容
 
 		File file = new File("src/whisper/log/"+name+".log");
@@ -392,6 +392,7 @@ public class ChatRoom extends JPanel implements ActionListener {
 			while ((str = br.readLine())!=null){//readLine返回的是一个string，所以读完时，返回null
 				reciveInfo.append(str+"\n");//读取的内容添加到reciveInfo中
 			}
+
 			System.out.println("\n读取完毕！");
 
 		} catch (FileNotFoundException e) {
