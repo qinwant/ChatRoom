@@ -78,6 +78,8 @@ public class ChatRoom extends JPanel implements ActionListener {
 		onlines = new Vector();//在线人数
 		init();
 
+		RestoreChatHistory();//还原聊天数据
+
 		//封装消息类
 		Message message = new Message();
 		message.setType(0);//设置上下线更新
@@ -85,7 +87,6 @@ public class ChatRoom extends JPanel implements ActionListener {
 		message.setName(name);//姓名
 		//发送消息给服务器
 		sendToServer(message);
-
 		//声音提示
 		try {
 			fileOnline = new File("sounds/叮.wav");
@@ -104,6 +105,7 @@ public class ChatRoom extends JPanel implements ActionListener {
 			public void windowClosing(WindowEvent e) {
 				int count = JOptionPane.showConfirmDialog(null,"您确定要离开吗?");
 				if(count==JOptionPane.YES_OPTION){
+					saveChatRecord();
 					Message message = new Message();
 					message.setType(-1);
 					message.setName(name);
@@ -280,6 +282,7 @@ public class ChatRoom extends JPanel implements ActionListener {
 			//下线操作
 			int count = JOptionPane.showConfirmDialog(null, "确定离开？");
 			if(count==JOptionPane.YES_OPTION){
+				saveChatRecord();//保存聊天内容
 				Message message = new Message();
 				message.setType(-1);
 				message.setTimer(WhisperUtil.getTimer());
@@ -302,30 +305,103 @@ public class ChatRoom extends JPanel implements ActionListener {
 			}else if (selectedName.toString().contains("（我）")){
 				JOptionPane.showMessageDialog(null,"不能与自己聊天");
 				return;
-			}
-			/*
+			}else {
+				/*
 			满足发送条件：
 			1.向服务器发送消息
 					消息内容：1.时间 2.姓名 3.消息内容 4.类型 5.发送给谁
 			2.服务器转发
 			 */
-			Message message  =new Message();
-			message.setType(1);
-			message.setTimer(WhisperUtil.getTimer());
-			message.setName(name);
-			message.setInfo(msg);
-			HashSet<String> set = new HashSet<String>();
-			set.addAll(selectedName);
-			message.setClients(set);//选择聊天的对象
-			sendToServer(message);
-			//清空发送框内容
-			sendInfo.setText(null);
-			//添加自己对谁发了信息
-			reciveInfo.append(message.getTimer()+"我对"+selectedName+"说:"+message.getInfo()+"\n");
+				Message message  =new Message();
+				message.setType(1);
+				message.setTimer(WhisperUtil.getTimer());
+				message.setName(name);
+				message.setInfo(msg);
+				HashSet<String> set = new HashSet<String>();
+				set.addAll(selectedName);
+				message.setClients(set);//选择聊天的对象
+				sendToServer(message);
+				//清空发送框内容
+				sendInfo.setText(null);
+				//添加自己对谁发了信息
+				reciveInfo.append(message.getTimer()+"我对"+selectedName+"说:"+message.getInfo()+"\n");
+			}
+
 		}
 		
 	}
-	
+
+	/**
+	 * 保存聊天记录
+	 */
+	private void saveChatRecord() {
+
+		String record = reciveInfo.getText();//获取聊天内容
+
+		File file = new File("src/whisper/log/"+name+".log");
+		//判断文件是否存在，否则创建
+		if(!file.exists()){
+			System.out.println("聊天文件不存在！");
+			try {
+				file.createNewFile();
+				System.out.println("创建文件成功！");
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.out.println("创建文件失败");
+			}
+		}
+
+		//使用BufferedWriter写数据
+		FileWriter fw = null;
+		BufferedWriter bw = null;
+		try {
+			fw = new FileWriter(file,true);//如果为true，则在文本后面追加，不覆盖
+			bw = new BufferedWriter(fw);//使用高级流时要嵌套低级流
+
+			bw.write(record);
+			bw.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 还原聊天记录
+	 */
+	private void RestoreChatHistory(){
+		File file = new File("src/whisper/log/"+name+".log");
+
+		if(!file.exists()){
+			System.out.println("聊天文件不存在！");
+			try {
+				file.createNewFile();
+				System.out.println("创建文件成功！");
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.out.println("创建文件失败");
+			}
+		}
+		//使用BufferedReader读取数据
+		FileReader fr = null;
+		BufferedReader br = null;
+		try {
+			fr = new FileReader(file);
+			br = new BufferedReader(fr);//嵌套底层流
+			//使用ReadLine一行一行的读，每次只读一行。
+			String str = null;
+			while ((str = br.readLine())!=null){//readLine返回的是一个string，所以读完时，返回null
+				reciveInfo.append(str+"\n");//读取的内容添加到reciveInfo中
+			}
+			System.out.println("\n读取完毕！");
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 	public static void main(String[] args) {
 		new ChatRoom();
 	}
